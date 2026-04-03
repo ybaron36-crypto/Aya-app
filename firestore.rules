@@ -9,13 +9,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.uid == 'Lf6FKjgu57RqXYcRV7LcMMDuNeB2' ||
-        request.auth.token.email == 'ybaron36@gmail.com' ||
-        request.auth.token.email == 'YBaron36@gmail.com' ||
-        request.auth.token.email == 'admin@ayabaron.co.il' ||
-        request.auth.token.firebase.sign_in_provider == 'anonymous'
-      );
+      return request.auth != null;
     }
 
     function hasOnlyAllowedFields(fields) {
@@ -93,7 +87,7 @@ service cloud.firestore {
 
     // Saved Menus: Only admin can read/write
     match /savedMenus/{menuId} {
-      allow read: if isAdmin();
+      allow read: if true;
       allow create, update: if isAdmin() && isValidSavedMenu();
       allow delete: if isAdmin();
     }

@@ -95,6 +95,7 @@ export default function AdminApp() {
   const [error, setError] = useState<string | null>(null);
   const [isManualAdmin, setIsManualAdmin] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteOrderConfirmId, setDeleteOrderConfirmId] = useState<string | null>(null);
   const [savedMenus, setSavedMenus] = useState<any[]>([]);
   const [isSavingMenuModalOpen, setIsSavingMenuModalOpen] = useState(false);
   const [isLoadMenuModalOpen, setIsLoadMenuModalOpen] = useState(false);
@@ -110,20 +111,19 @@ export default function AdminApp() {
     setError(null);
 
     try {
-      // Create a reference to the file in Firebase Storage
-      const fileRef = ref(storage, `menu/${Date.now()}_${file.name}`);
-      
-      // Upload the file
-      await uploadBytes(fileRef, file);
-      
-      // Get the download URL
-      const downloadURL = await getDownloadURL(fileRef);
-      
-      setNewItem(prev => ({ ...prev, imageUrl: downloadURL }));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewItem(prev => ({ ...prev, imageUrl: reader.result as string }));
+        setIsUploading(false);
+      };
+      reader.onerror = () => {
+        setError("שגיאה בקריאת הקובץ");
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
     } catch (err: any) {
       console.error("File upload failed", err);
-      setError(`שגיאה בהעלאת הקובץ: ${err.message || 'וודא ש-Firebase Storage מוגדר כראוי.'}`);
-    } finally {
+      setError(`שגיאה בהעלאת הקובץ: ${err.message}`);
       setIsUploading(false);
     }
   };
@@ -864,12 +864,12 @@ export default function AdminApp() {
                   </div>
                 </div>
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 flex-wrap">
                     {order.status === 'pending' && (
                       <button
                         disabled={isSubmitting}
                         onClick={() => updateOrderStatus(order.id, 'confirmed')}
-                        className="flex-1 bg-blue-500 text-white py-4 rounded-2xl font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="flex-1 bg-blue-500 text-white py-4 px-2 rounded-2xl font-medium flex items-center justify-center gap-2 disabled:opacity-50"
                       >
                         {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Check className="w-5 h-5" /> אישור</>}
                       </button>
@@ -878,7 +878,7 @@ export default function AdminApp() {
                       <button
                         disabled={isSubmitting}
                         onClick={() => updateOrderStatus(order.id, 'ready')}
-                        className="flex-1 bg-green-500 text-white py-4 rounded-2xl font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="flex-1 bg-green-500 text-white py-4 px-2 rounded-2xl font-medium flex items-center justify-center gap-2 disabled:opacity-50"
                       >
                         {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Package className="w-5 h-5" /> לסמן כהושלם</>}
                       </button>
@@ -887,7 +887,7 @@ export default function AdminApp() {
                       <button
                         disabled={isSubmitting}
                         onClick={() => updateOrderStatus(order.id, 'delivered')}
-                        className="flex-1 bg-brand-red text-white py-4 rounded-2xl font-medium flex items-center justify-center gap-2 shadow-lg shadow-brand-red/20 disabled:opacity-50"
+                        className="flex-1 bg-brand-red text-white py-4 px-2 rounded-2xl font-medium flex items-center justify-center gap-2 shadow-lg shadow-brand-red/20 disabled:opacity-50"
                       >
                         {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Check className="w-5 h-5" /> נמסר</>}
                       </button>
@@ -898,6 +898,23 @@ export default function AdminApp() {
                       className="px-6 bg-gray-100 text-gray-400 py-4 rounded-2xl font-medium hover:bg-brand-red/5 hover:text-brand-red transition-colors disabled:opacity-50"
                     >
                       ביטול
+                    </button>
+                    <button
+                      disabled={isSubmitting}
+                      onClick={() => setDeleteOrderConfirmId(order.id)}
+                      className="px-6 bg-purple-100 text-purple-600 py-4 rounded-2xl font-medium hover:bg-purple-200 transition-colors disabled:opacity-50"
+                    >
+                      מחיקה
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const text = encodeURIComponent(`היי ${order.customerName}, ההזמנה שלך (#${order.orderNumber}) מוכנה!`);
+                        window.open(`https://wa.me/972${order.customerPhone.replace(/^0/, '')}?text=${text}`, '_blank');
+                      }} 
+                      className="w-full bg-[#25D366] text-white py-4 rounded-2xl font-medium flex items-center justify-center gap-2 hover:bg-[#20bd5a] transition-colors"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      <span>הודעה ללקוח (וואטסאפ)</span>
                     </button>
                   </div>
               </motion.div>
