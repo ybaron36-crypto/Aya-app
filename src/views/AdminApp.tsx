@@ -5,7 +5,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage, handleFirestoreError, OperationType } from '../lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
-import { LayoutDashboard, UtensilsCrossed, ClipboardList, LogOut, Plus, Trash2, Check, X, Clock, Package, Bell, Printer, Mail, Sparkles, Loader2, RefreshCw, Edit2, Upload, MessageCircle, Save, Download } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, ClipboardList, LogOut, Plus, Trash2, Check, X, Clock, Package, Bell, Printer, Mail, Sparkles, Loader2, RefreshCw, Edit2, Upload, MessageCircle, Save, Download, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
@@ -99,6 +99,7 @@ export default function AdminApp() {
   const [isSavingMenuModalOpen, setIsSavingMenuModalOpen] = useState(false);
   const [isLoadMenuModalOpen, setIsLoadMenuModalOpen] = useState(false);
   const [menuName, setMenuName] = useState('');
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const prevOrdersCount = useRef(0);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,8 +143,10 @@ export default function AdminApp() {
       const newOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
       // Sound notification for new orders
       if (newOrders.length > prevOrdersCount.current && prevOrdersCount.current > 0) {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-        audio.play().catch(() => {});
+        if (audioEnabled) {
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+          audio.play().catch(() => {});
+        }
       }
       prevOrdersCount.current = newOrders.length;
       setOrders(newOrders);
@@ -689,7 +692,23 @@ export default function AdminApp() {
             <span className="font-medium whitespace-nowrap">ניהול תפריט</span>
           </button>
 
-          <div className="md:pt-8 md:mt-8 md:border-t border-brand-red/10 flex-shrink-0">
+          <div className="md:pt-8 md:mt-8 md:border-t border-brand-red/10 flex-shrink-0 flex flex-col gap-2">
+            <button
+              onClick={() => {
+                if (!audioEnabled) {
+                  const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                  audio.play().catch(() => {});
+                }
+                setAudioEnabled(!audioEnabled);
+              }}
+              className={cn(
+                "w-full flex items-center gap-3 md:gap-4 px-4 md:px-6 py-3 md:py-4 rounded-2xl transition-all",
+                audioEnabled ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+              )}
+            >
+              {audioEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              <span className="font-medium whitespace-nowrap">{audioEnabled ? 'התראות קוליות פועלות' : 'הפעל התראות קוליות'}</span>
+            </button>
             <button
               onClick={() => window.location.hash = ''}
               className="w-full flex items-center gap-3 md:gap-4 px-4 md:px-6 py-3 md:py-4 text-gray-400 hover:text-brand-red transition-colors"

@@ -172,15 +172,6 @@ export default function ClientApp() {
           <p className="text-4xl font-mono font-bold text-brand-red">#{orderSuccess.orderNumber}</p>
         </div>
         <div className="flex flex-col gap-4 w-full max-w-xs">
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-[#25D366] text-white px-6 py-4 rounded-full font-medium hover:bg-[#20bd5a] transition-colors shadow-lg flex items-center justify-center gap-2"
-          >
-            <MessageCircle className="w-6 h-6" />
-            <span>שלח הודעת וואטסאפ לאישור</span>
-          </a>
           <button
             onClick={() => setOrderSuccess(null)}
             className="bg-brand-red text-white px-8 py-4 rounded-full font-medium hover:bg-brand-red/90 transition-colors shadow-lg"

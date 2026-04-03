@@ -10,15 +10,11 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() && (
-        request.auth.uid == "Lf6FKjgu57RqXYcRV7LcMMDuNeB2" ||
-        ("email" in request.auth.token && (
-          request.auth.token.email == "ybaron36@gmail.com" ||
-          request.auth.token.email == "YBaron36@gmail.com" ||
-          request.auth.token.email == "admin@ayabaron.co.il"
-        )) ||
-        request.auth.token.firebase.sign_in_provider == "anonymous" ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin")
+        request.auth.uid == 'Lf6FKjgu57RqXYcRV7LcMMDuNeB2' ||
+        request.auth.token.email == 'ybaron36@gmail.com' ||
+        request.auth.token.email == 'YBaron36@gmail.com' ||
+        request.auth.token.email == 'admin@ayabaron.co.il' ||
+        request.auth.token.firebase.sign_in_provider == 'anonymous'
       );
     }
 
