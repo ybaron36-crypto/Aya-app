@@ -1,0 +1,90 @@
+{
+  "entities": {
+    "MenuItem": {
+      "title": "Menu Item",
+      "description": "A food item available on the menu.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "category": { "type": "string" },
+        "unit": { "type": "string" },
+        "inStock": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price", "unit", "inStock"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A customer order.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerCity": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "menuItemId": { "type": "string" },
+              "name": { "type": "string" },
+              "quantity": { "type": "number" },
+              "price": { "type": "number" },
+              "unit": { "type": "string" }
+            }
+          }
+        },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "ready", "delivered", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["customerName", "customerPhone", "customerCity", "items", "total", "status", "createdAt"]
+    },
+    "SavedMenu": {
+      "title": "Saved Menu",
+      "description": "A saved preset of menu items.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "price": { "type": "number" },
+              "imageUrl": { "type": "string" },
+              "category": { "type": "string" },
+              "unit": { "type": "string" },
+              "inStock": { "type": "boolean" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "items", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/menu": {
+      "schema": "MenuItem",
+      "description": "Collection of menu items."
+    },
+    "/orders": {
+      "schema": "Order",
+      "description": "Collection of customer orders."
+    },
+    "/savedMenus": {
+      "schema": "SavedMenu",
+      "description": "Collection of saved menu presets."
+    }
+  }
+}

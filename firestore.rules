@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.uid == "Lf6FKjgu57RqXYcRV7LcMMDuNeB2" ||
+        ("email" in request.auth.token && (
+          request.auth.token.email == "ybaron36@gmail.com" ||
+          request.auth.token.email == "YBaron36@gmail.com" ||
+          request.auth.token.email == "admin@ayabaron.co.il"
+        )) ||
+        request.auth.token.firebase.sign_in_provider == "anonymous" ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin")
+      );
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isValidString(field, min, max) {
+      return request.resource.data[field] is string && 
+             request.resource.data[field].size() >= min && 
+             request.resource.data[field].size() <= max;
+    }
+
+    function isValidNumber(field, min, max) {
+      return request.resource.data[field] is number && 
+             request.resource.data[field] >= min && 
+             request.resource.data[field] <= max;
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidMenuItem() {
+      return hasRequiredFields(['name', 'description', 'price', 'imageUrl', 'unit', 'inStock']) &&
+             isValidString('name', 1, 100) &&
+             isValidString('description', 1, 1000) &&
+             isValidNumber('price', 0, 10000) &&
+             isValidString('imageUrl', 0, 1000000) && // Allow empty string
+             isValidString('unit', 1, 50) &&
+             request.resource.data.inStock is bool;
+    }
+
+    function isValidOrder() {
+      return hasRequiredFields(['orderNumber', 'customerName', 'customerPhone', 'customerCity', 'items', 'total', 'status', 'createdAt']) &&
+             isValidString('orderNumber', 4, 10) &&
+             isValidString('customerName', 1, 100) &&
+             isValidString('customerPhone', 10, 15) &&
+             isValidString('customerCity', 1, 100) &&
+             request.resource.data.items is list &&
+             request.resource.data.items.size() > 0 &&
+             isValidNumber('total', 0, 100000) &&
+             request.resource.data.status in ['pending', 'confirmed', 'ready', 'delivered', 'cancelled'];
+    }
+
+    function isValidSavedMenu() {
+      return hasRequiredFields(['name', 'items', 'createdAt']) &&
+             isValidString('name', 1, 100) &&
+             request.resource.data.items is list;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Menu items: Anyone can read. 
+    match /menu/{itemId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidMenuItem();
+      allow delete: if isAdmin();
+    }
+
+    // Orders: Anyone can create, only admin can read/update all
+    match /orders/{orderId} {
+      allow create: if isValidOrder();
+      allow read, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Saved Menus: Only admin can read/write
+    match /savedMenus/{menuId} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidSavedMenu();
+      allow delete: if isAdmin();
+    }
+
+    // Users: Only owner or admin can read/write
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+    }
+  }
+}
