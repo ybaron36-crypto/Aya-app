@@ -242,26 +242,29 @@ export default function ClientApp() {
                 >
                   <h2 className="text-white text-4xl md:text-6xl font-serif font-bold mb-2 md:mb-4 drop-shadow-lg">{item.name}</h2>
                   <p className="text-white/90 text-sm md:text-xl md:leading-relaxed mb-6 md:mb-8 max-w-[90%] md:max-w-[70%] ml-auto drop-shadow-md font-medium">{item.description}</p>
-                  <div className="flex items-center gap-4 justify-end">
-                    <div className="bg-brand-red text-white px-5 py-2 md:px-6 md:py-3 rounded-full flex items-center gap-3 shadow-2xl border border-white/20 backdrop-blur-md">
-                      <span className="text-2xl md:text-4xl font-bold tracking-tight">₪{item.price}</span>
-                      <div className="w-px h-6 md:h-8 bg-white/30"></div>
-                      <span className="text-white/90 text-sm md:text-base font-medium uppercase tracking-widest">ל-{item.unit}</span>
-                    </div>
+                  <div className="flex items-center justify-center md:justify-start mt-8">
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setSelectedItem(item)}
+                      className="relative w-32 h-32 md:w-40 md:h-40 bg-[#1a1a1a] rounded-full flex items-center justify-center text-white shadow-2xl border-4 border-[#333] group"
+                    >
+                      {/* Wok Handle */}
+                      <div className="absolute -right-6 md:-right-8 top-1/2 -translate-y-1/2 w-10 md:w-12 h-4 md:h-5 bg-[#333] rounded-r-full" />
+                      {/* Wok Inner Gradient */}
+                      <div className="absolute inset-2 md:inset-3 rounded-full bg-gradient-to-br from-[#444] to-[#111] flex items-center justify-center shadow-inner">
+                        <span className="text-white font-bold text-3xl md:text-4xl tracking-widest drop-shadow-lg">הזמן</span>
+                      </div>
+                    </motion.button>
                   </div>
                 </motion.div>
               </div>
 
-              {/* Action Buttons */}
+              {/* Price Bubble (Absolute Left) */}
               <div className="absolute left-6 md:left-12 bottom-32 md:bottom-40 z-20 flex flex-col gap-2 items-center">
-                <motion.button
-                  whileTap={{ scale: 0.8 }}
-                  onClick={() => setSelectedItem(item)}
-                  className="w-14 h-14 md:w-20 md:h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 hover:bg-white/20 transition-colors shadow-2xl"
-                >
-                  <Heart className="w-6 h-6 md:w-8 md:h-8" />
-                </motion.button>
-                <span className="text-white font-bold drop-shadow-md text-sm md:text-base tracking-widest">הזמן</span>
+                <div className="w-20 h-20 md:w-28 md:h-28 bg-brand-red/90 backdrop-blur-md rounded-full flex flex-col items-center justify-center text-white border border-white/20 shadow-2xl">
+                  <span className="text-2xl md:text-4xl font-bold tracking-tight">₪{item.price}</span>
+                  <span className="text-[10px] md:text-xs font-medium uppercase tracking-widest mt-1">ל-{item.unit}</span>
+                </div>
                 <div className="text-center text-white/90 text-[10px] md:text-xs uppercase tracking-tighter drop-shadow-md font-bold mt-4">החליקו למעלה</div>
               </div>
             </div>

@@ -111,10 +111,54 @@ export default function AdminApp() {
     setError(null);
 
     try {
+      if (file.type.startsWith('video/')) {
+        setError('לא ניתן להעלות סרטונים ישירות (חורג ממגבלת הגודל). אנא הדבק קישור (URL) לסרטון.');
+        setIsUploading(false);
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setNewItem(prev => ({ ...prev, imageUrl: reader.result as string }));
-        setIsUploading(false);
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          
+          if (compressedDataUrl.length > 1000000) {
+            setError('התמונה גדולה מדי גם לאחר דחיסה. אנא בחר תמונה קטנה יותר.');
+          } else {
+            setNewItem(prev => ({ ...prev, imageUrl: compressedDataUrl }));
+          }
+          setIsUploading(false);
+        };
+        img.onerror = () => {
+          setError("שגיאה בעיבוד התמונה");
+          setIsUploading(false);
+        };
+        img.src = reader.result as string;
       };
       reader.onerror = () => {
         setError("שגיאה בקריאת הקובץ");
@@ -369,6 +413,20 @@ export default function AdminApp() {
     }
   };
 
+  const deleteOrder = async (id: string) => {
+    setIsSubmitting(true);
+    setDeleteOrderConfirmId(null);
+    try {
+      await deleteDoc(doc(db, 'orders', id));
+    } catch (error: any) {
+      console.error("Error deleting order:", error);
+      setError(`שגיאה במחיקת הזמנה: ${error.message}`);
+      try { handleFirestoreError(error, OperationType.DELETE, 'orders'); } catch(e) {}
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const updateOrderStatus = async (id: string, status: Order['status']) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -396,9 +454,9 @@ export default function AdminApp() {
   const deleteMenuItem = async (id: string) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    setDeleteConfirmId(null);
     try {
       await deleteDoc(doc(db, 'menu', id));
-      setDeleteConfirmId(null);
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `menu/${id}`);
     } finally {
@@ -692,7 +750,7 @@ export default function AdminApp() {
             <span className="font-medium whitespace-nowrap">ניהול תפריט</span>
           </button>
 
-          <div className="md:pt-8 md:mt-8 md:border-t border-brand-red/10 flex-shrink-0 flex flex-col gap-2">
+          <div className="md:pt-8 md:mt-8 md:border-t border-brand-red/10 flex-shrink-0 flex flex-row md:flex-col gap-2">
             <button
               onClick={() => {
                 if (!audioEnabled) {
@@ -997,7 +1055,7 @@ export default function AdminApp() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white w-full max-w-2xl rounded-[40px] p-12 border border-brand-red/10"
+              className="relative bg-white w-full max-w-2xl rounded-[40px] p-6 md:p-12 border border-brand-red/10 max-h-[90vh] overflow-y-auto"
             >
               <h3 className="text-3xl md:text-4xl font-display text-brand-red mb-8 text-right">
                 {editingItemId ? 'עריכת מנה' : 'הוספת פריט חדש לתפריט'}
@@ -1094,7 +1152,7 @@ export default function AdminApp() {
                     />
                   </div>
                 </div>
-                <div className="col-span-2 flex flex-col gap-4 mt-4">
+                <div className="md:col-span-2 flex flex-col gap-4 mt-4">
                   {error && <p className="text-brand-red text-sm text-center bg-brand-red/5 py-2 rounded-xl">{error}</p>}
                   <div className="flex gap-4">
                     <button 
@@ -1163,6 +1221,54 @@ export default function AdminApp() {
                   disabled={isSubmitting}
                   onClick={() => setDeleteConfirmId(null)}
                   className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-full font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  ביטול
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Order Confirmation Modal */}
+      <AnimatePresence>
+        {deleteOrderConfirmId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setDeleteOrderConfirmId(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white rounded-[40px] p-10 max-w-md w-full shadow-2xl text-center"
+            >
+              <div className="w-20 h-20 bg-purple-100 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Trash2 className="w-10 h-10" />
+              </div>
+              <h3 className="text-3xl font-display text-purple-600 mb-4">מחיקת הזמנה</h3>
+              <p className="text-brand-blue font-display text-lg mb-8">האם אתם בטוחים שברצונכם למחוק הזמנה זו? פעולה זו אינה ניתנת לביטול.</p>
+              <div className="flex gap-4">
+                <button
+                  disabled={isSubmitting}
+                  onClick={() => deleteOrder(deleteOrderConfirmId)}
+                  className="flex-1 bg-purple-600 text-white py-4 rounded-full font-medium hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      מוחק...
+                    </>
+                  ) : 'כן, למחוק'}
+                </button>
+                <button
+                  disabled={isSubmitting}
+                  onClick={() => setDeleteOrderConfirmId(null)}
+                  className="flex-1 bg-gray-100 text-gray-500 py-4 rounded-full font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
                 >
                   ביטול
                 </button>
